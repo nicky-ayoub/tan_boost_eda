@@ -11,7 +11,7 @@ using std::string;
 
 template <typename GraphType>
 class DFrontier{
-typedef boost::graph_traits<GraphType>::vertex_descriptor VertexType;
+typedef typename boost::graph_traits<GraphType>::vertex_descriptor VertexType;
 public:
    DFrontier() : _reachedPO(false) {}
    const char* getVersion(){ return _Version; };

@@ -33,84 +33,13 @@
 #include "DFrontier.hpp"
 #include "DLogic.hpp"
 // std namespace usage
-using std::accumulate;
-using std::find_if;
-using std::for_each;
-using std::transform;
-using std::copy;
-using std::back_inserter;
-using std::unary_function;
-using std::binary_function;
-using std::bind2nd;
-using std::cout;
-using std::ostream_iterator;
-using std::ostringstream;
-using std::ifstream;
-using std::ios;
-using std::string;
-using std::vector;
-using std::set;
-using std::deque;
-using std::logical_and;
-using std::logical_or;
-using std::boolalpha;
+using namespace std;
 // boost namespace usage
-using boost::tuple;
-using boost::queue;
-using boost::white_color;
-using boost::gray_color;
-using boost::black_color;
-using boost::lexical_cast;
-using boost::tie;
-using boost::adjacency_list;
-using boost::listS;
-using boost::vecS;
-using boost::directedS;
-using boost::property;
-using boost::is_same;
-using boost::graph_traits;
-using boost::property_map;
-using boost::default_dfs_visitor;
-using boost::default_bfs_visitor;
-using boost::visitor;
-using boost::depth_first_search;
-using boost::depth_first_visit;
-using boost::breadth_first_search;
-using boost::breadth_first_visit;
-using boost::GraphvizGraph;
-using boost::GraphvizDigraph;
-using boost::read_graphviz;
-using boost::write_graphviz;
-using boost::num_vertices;
-using boost::make_iterator_property_map;
-using boost::vertex_index_t;
-using boost::vertex_index;
-using boost::get;
-using boost::vertex_name_t;
-using boost::vertex_name;
-using boost::edge_weight_t;
-using boost::edge_weight;
-using boost::vertex_attribute_t;
-using boost::vertex_attribute;
-using boost::edge_attribute_t;
-using boost::edge_attribute;
-using boost::vertex_color_t;
-using boost::vertex_color;
-using boost::default_color_type;
-using boost::vertices;
-using boost::adjacent_vertices;
-using boost::edges;
-using boost::in_edges;
-using boost::out_edges;
-using boost::in_degree;
-using boost::out_degree;
-using boost::degree;
-using boost::source;
-using boost::target;
-using boost::reverse_graph;
+using namespace boost;
+
 // extended BGL functionality
-using boost::dfv;
-using boost::dfs;
+//using boost::dfv;
+//using boost::dfs;
 
 /** Further areas of investigation
 1) Multiple faults
@@ -133,7 +62,7 @@ decision making ) introduces a retry step that addresses this.
 // ------------------------------------------------------------
 // Global Typedefs
 // ------------------------------------------------------------
-typedef tuple<bool,bool,bool> tripleBool;
+typedef boost::tuple<bool,bool,bool> tripleBool;
 
 // ------------------------------------------------------------
 // class SupportGraph
@@ -145,13 +74,13 @@ class SupportGraph{
 public:
       enum DotFileType{Unknown,Digraph,Graph,N};
       static DotFileType getDotFileType(const string& path);
-      static char* _DotFileStringType[N];
+      static string _DotFileStringType[N];
       SupportGraph(){};
 private:
       SupportGraph(const SupportGraph&);
       SupportGraph& operator=(const SupportGraph&);
 };
-char* SupportGraph::_DotFileStringType[N]={"Unknown","Digraph","Graph"};
+string SupportGraph::_DotFileStringType[N]={"Unknown","Digraph","Graph"};
 
 SupportGraph::DotFileType SupportGraph::getDotFileType(const string& path){
   /* Can't inquire about a Graphviz's type until we read it in, and
@@ -215,7 +144,7 @@ void dumpDFrontier(std::deque<VertexType>& dF,VertexAttrMapType& vMap){
   if(0==dF.size()){
     outputString << "empty";
   }else{
-    for(DFrontierType::iterator iD=dF.begin();iD!=dF.end();++iD){
+    for(typename DFrontierType::iterator iD=dF.begin();iD!=dF.end();++iD){
       outputString << vMap[*iD]["label"]+",";
     }
   }
@@ -229,7 +158,7 @@ void dumpSetVS(std::set<VertexSignalPair<VertexType> > & sVS,VertexAttrMapType& 
   if(0==sVS.size()){
     outputString << "empty";
   }else{
-    for(SetVertexSignalPairType::iterator iD=sVS.begin();iD!=sVS.end();++iD){
+    for(typename SetVertexSignalPairType::iterator iD=sVS.begin();iD!=sVS.end();++iD){
       outputString << vMap[iD->getVertex()]["label"]+"+";
       outputString << iD->getSignal();
       outputString << ",";
@@ -239,14 +168,14 @@ void dumpSetVS(std::set<VertexSignalPair<VertexType> > & sVS,VertexAttrMapType& 
 };
 template<class VertexType, class GraphType> 
 void putDescendantsInDFrontier(VertexType& v,GraphType& g,std::deque<VertexType>& dF){
-  typedef boost::property_map<GraphType,boost::vertex_attribute_t>::type VertexAttrMapType;
-  typedef boost::graph_traits<GraphType>::adjacency_iterator AdjacencyIteratorType;
+  typedef typename boost::property_map<GraphType,boost::vertex_attribute_t>::type VertexAttrMapType;
+  typedef typename boost::graph_traits<GraphType>::adjacency_iterator AdjacencyIteratorType;
   typedef std::deque<VertexType> DFrontierType;
     Debug D("putDescendantsInDFrontier");
     VertexAttrMapType vMap=boost::get(boost::vertex_attribute,g);
     AdjacencyIteratorType startAI, endAI;
     for(tie(startAI,endAI)=adjacent_vertices(v,g);startAI!=endAI;++startAI){
-      DFrontierType::iterator iVertexFound=std::find(dF.begin(),dF.end(),*startAI);
+      typename DFrontierType::iterator iVertexFound=std::find(dF.begin(),dF.end(),*startAI);
       if(dF.end()==iVertexFound){
         dF.push_back(*startAI);
       }//if *startAI not already in DFrontier
@@ -255,8 +184,8 @@ void putDescendantsInDFrontier(VertexType& v,GraphType& g,std::deque<VertexType>
 };
 template<class VertexType, class GraphType> 
 void putDescendantsInPContainer(VertexType& v,GraphType& g,std::deque<VertexType>& cV){
-  typedef boost::property_map<GraphType,boost::vertex_attribute_t>::type VertexAttrMapType;
-  typedef boost::graph_traits<GraphType>::adjacency_iterator AdjacencyIteratorType;
+  typedef typename boost::property_map<GraphType,boost::vertex_attribute_t>::type VertexAttrMapType;
+  typedef typename boost::graph_traits<GraphType>::adjacency_iterator AdjacencyIteratorType;
     Debug D("putDescendantsInPContainer");
     VertexAttrMapType vMap=boost::get(vertex_attribute,g);
     D.Dbg("1","source vertex==",vMap[v]["label"]);
@@ -298,7 +227,7 @@ bool DPassable(ContainerType& vDLogic, DLogic result){
    If there is no D/_D in the input, the return is trivially true.
    If there is a D/_D in the input, the result is true only if the result is D/_D.
  */
-  ContainerType::iterator target=std::find_if(vDLogic.begin(),vDLogic.end(),isXTypeFunctor());
+  typename ContainerType::iterator target=std::find_if(vDLogic.begin(),vDLogic.end(),isXTypeFunctor());
   bool bReturn=false;
   if(vDLogic.end()==target){ // container has no Xs
     target=std::find_if(vDLogic.begin(),vDLogic.end(),isDTypeFunctor());
@@ -345,9 +274,9 @@ DLogic EvaluateOutputs(Vertex& v, GraphType& g){
      D==good/bad==0/1 and _D==1/0
      Should _D and 1 be considered compatible?
   */ 
-  typedef boost::property_map<GraphType,boost::vertex_attribute_t>::type VertexAttrMapType;
-  typedef boost::property_map<GraphType,boost::edge_attribute_t>::type EdgeAttrMapType;
-  typedef boost::graph_traits<GraphType>::out_edge_iterator OutEdgeIteratorType;
+  typedef typename boost::property_map<GraphType,boost::vertex_attribute_t>::type VertexAttrMapType;
+  typedef typename boost::property_map<GraphType,boost::edge_attribute_t>::type EdgeAttrMapType;
+  typedef typename boost::graph_traits<GraphType>::out_edge_iterator OutEdgeIteratorType;
   Debug D("EvaluateOutputs");
   VertexAttrMapType vMap=boost::get(boost::vertex_attribute,g);
   EdgeAttrMapType eMap=boost::get(boost::edge_attribute,g);
@@ -414,8 +343,8 @@ DLogic EvaluateMultipleInputs(const string& func,vector<DLogic>& v){
 };
 template<class VertexType,class GraphType>
 void setOutputEdges(VertexType& v, GraphType& g, DLogic d){
-  typedef boost::graph_traits<GraphType>::out_edge_iterator OutEdgeIteratorType;
-  typedef boost::property_map<GraphType,boost::edge_attribute_t>::type EdgeAttrMapType;
+  typedef typename boost::graph_traits<GraphType>::out_edge_iterator OutEdgeIteratorType;
+  typedef typename boost::property_map<GraphType,boost::edge_attribute_t>::type EdgeAttrMapType;
   Debug D("setOutputEdges");
   EdgeAttrMapType eMap=boost::get(edge_attribute,g);
   OutEdgeIteratorType startEI,endEI;
@@ -439,10 +368,10 @@ class XEdgeVisitor : public boost::default_dfs_visitor{
    NB - compiler defaults of destructor, copy constructor sufficient
  */
 public :
-  typedef boost::property_map<GraphType,boost::vertex_attribute_t>::type VertexAttrMapType;
-  typedef boost::property_map<GraphType,boost::edge_attribute_t>::type EdgeAttrMapType;
+  typedef typename boost::property_map<GraphType,boost::vertex_attribute_t>::type VertexAttrMapType;
+  typedef typename boost::property_map<GraphType,boost::edge_attribute_t>::type EdgeAttrMapType;
   XEdgeVisitor(GraphType& g){ _EdgeAttrMap=boost::get(edge_attribute,g); }
-  template <class Edge, class GraphType> void examine_edge(Edge e, const GraphType &){
+  template <class Edge, GraphType> void examine_edge(Edge e, const GraphType &){
     if(""==_EdgeAttrMap[e]["label"])
       _EdgeAttrMap[e]["label"]="X";
   }
@@ -455,13 +384,13 @@ private:
 // class GetSignalFunctor
 // ------------------------------------------------------------
 template<typename GraphType>
-class GetSignalFunctor : public unary_function<boost::graph_traits<GraphType>::edge_descriptor,DLogic>{
+class GetSignalFunctor : public unary_function<typename boost::graph_traits<GraphType>::edge_descriptor,DLogic>{
 /* functor to return signal value of an edge
    NB - compiler defaults of desctructor, copy constructor sufficient
  */
 public:
-  typedef boost::property_map<GraphType,boost::edge_attribute_t>::type EdgeAttrMapType;
-  typedef boost::graph_traits<GraphType>::edge_descriptor EdgeType;
+  typedef typename boost::property_map<GraphType,boost::edge_attribute_t>::type EdgeAttrMapType;
+  typedef typename boost::graph_traits<GraphType>::edge_descriptor EdgeType;
   GetSignalFunctor(GraphType& g){ _E=boost::get(edge_attribute,g);};
   DLogic operator()(const EdgeType& e) const {
     string& signal=_E[e]["label"];
@@ -485,17 +414,17 @@ class BacktraceVisitor : public boost::default_dfs_visitor{
    NB - compiler defaults of desctructor, copy constructor sufficient
 */
 public:
-  typedef boost::property_map<GraphType,boost::vertex_attribute_t>::const_type ConstVertexAttrMapType;
-  typedef boost::property_map<GraphType,boost::edge_attribute_t>::type EdgeAttrMapType;
-  typedef boost::graph_traits<GraphType>::in_edge_iterator InEdgeIteratorType;
-  typedef boost::graph_traits<GraphType>::out_edge_iterator OutEdgeIteratorType;
-  typedef boost::graph_traits<GraphType>::vertex_descriptor VertexType;
+  typedef typename boost::property_map<GraphType,boost::vertex_attribute_t>::const_type ConstVertexAttrMapType;
+  typedef typename boost::property_map<GraphType,boost::edge_attribute_t>::type EdgeAttrMapType;
+  typedef typename boost::graph_traits<GraphType>::in_edge_iterator InEdgeIteratorType;
+  typedef typename boost::graph_traits<GraphType>::out_edge_iterator OutEdgeIteratorType;
+  typedef typename boost::graph_traits<GraphType>::vertex_descriptor VertexType;
   typedef set<VertexSignalPair<VertexType> > SetVertexSignalPairType;
 
   BacktraceVisitor(const GraphType& g,EdgeAttrMapType& eM,SetVertexSignalPairType& setVS) : _EdgeAttrMap(eM), _SetVS(setVS){
   /* BacktraceVisitor is used with GraphType==<reverse_graph<G>>, so the GraphType edge attr map has to be passed in */
   }
-  template<class Vertex,class GraphType> bool HasXs(Vertex v,const GraphType& g){
+  template<class Vertex, GraphType> bool HasXs(Vertex v,const GraphType& g){
     Debug D("HasXs");
     string VertexLabel=boost::get(boost::vertex_attribute,g,v)["label"];
     D.Dbg("1","vertex label==",VertexLabel);
@@ -512,7 +441,7 @@ public:
      }
     return bReturn;
   }
-  template <class Vertex, class GraphType> DLogic suggestEnablingSignal(Vertex v, const GraphType & g){
+  template <class Vertex,  GraphType> DLogic suggestEnablingSignal(Vertex v, const GraphType & g){
     /* Looks at source vertices of all incoming edges and collect
        their func values. Return enabling signal, based on func values if
        NAND,NOR,AND and OR found. Otherwise, no simple algorithm exists, so we
@@ -550,7 +479,7 @@ public:
     D.Dbg("1","dResult==",dResult.GetString());
     return dResult;
   }
-  template <class Vertex, class GraphType> void discover_vertex(Vertex v, const GraphType & g){
+  template <class Vertex, GraphType> void discover_vertex(Vertex v, const GraphType & g){
     Debug D("discover_vertex");
     string VertexLabel=boost::get(boost::vertex_attribute,g,v)["label"];
     D.Dbg("1","vertex label==",VertexLabel);
@@ -605,18 +534,18 @@ class RunGraph{
 /* class to implement Podem algorithm
 */
 public:
-      typedef boost::property_map<GraphType,boost::vertex_attribute_t>::type VertexAttrMapType;
-	  typedef boost::property_map<GraphType,boost::edge_attribute_t>::type EdgeAttrMapType;
-      typedef boost::graph_traits<GraphType>::vertex_descriptor VertexType;
-      typedef boost::graph_traits<GraphType>::vertex_iterator VertexIteratorType;
-      typedef boost::graph_traits<GraphType>::edge_iterator EdgeIteratorType;
-      typedef boost::graph_traits<GraphType>::in_edge_iterator InEdgeIteratorType;
-      typedef boost::graph_traits<GraphType>::out_edge_iterator OutEdgeIteratorType;
+      typedef typename boost::property_map<GraphType,boost::vertex_attribute_t>::type VertexAttrMapType;
+	  typedef typename boost::property_map<GraphType,boost::edge_attribute_t>::type EdgeAttrMapType;
+      typedef typename boost::graph_traits<GraphType>::vertex_descriptor VertexType;
+      typedef typename boost::graph_traits<GraphType>::vertex_iterator VertexIteratorType;
+      typedef typename boost::graph_traits<GraphType>::edge_iterator EdgeIteratorType;
+      typedef typename boost::graph_traits<GraphType>::in_edge_iterator InEdgeIteratorType;
+      typedef typename boost::graph_traits<GraphType>::out_edge_iterator OutEdgeIteratorType;
       typedef std::deque<VertexType> DFrontierType;
       typedef std::deque<VertexType> PropagateContainerType;
       typedef set<VertexSignalPair<VertexType> > SetVertexSignalPairType;
       // Needs boost::               Y                    N                            Y                    N
-	  BOOST_STATIC_ASSERT((boost::is_same<GraphType,GraphvizGraph>::value || boost::is_same<GraphType,GraphvizDigraph>::value));
+  BOOST_STATIC_ASSERT((boost::is_same<GraphType,GraphvizGraph>::value || boost::is_same<GraphType,GraphvizDigraph>::value));
       RunGraph(const string& path);
       ~RunGraph();
       void setDebug(const string& dString);
@@ -671,7 +600,7 @@ void RunGraph<G>::writeGraph(const string& path){
   write_graphviz(path.c_str(),_g);
 };
 template<typename G>
-RunGraph<G>::VertexType RunGraph<G>::findVertexWithLabel(const string& label){
+typename RunGraph<G>::VertexType RunGraph<G>::findVertexWithLabel(const string& label){
    VertexIteratorType viStart,viEnd;
    for(tie(viStart,viEnd)=vertices(_g);viStart!=viEnd;++viStart){
       if(label==_v[*viStart]["label"]){
@@ -695,7 +624,7 @@ void RunGraph<G>::seedDFrontier(DFrontierType& dF){
    for(tie(firstEI,lastEI)=edges(_g);firstEI!=lastEI;++firstEI){
      if(("D"==_e[*firstEI]["label"])||("_D"==_e[*firstEI]["label"])){
       vTarget=target(*firstEI,_g);
-      DFrontierType::iterator iVertexFound=std::find(dF.begin(),dF.end(),vTarget);
+      typename DFrontierType::iterator iVertexFound=std::find(dF.begin(),dF.end(),vTarget);
       if(dF.end()==iVertexFound){
         dF.push_back(vTarget);
       }//if vTarget not in DFrontier
@@ -771,7 +700,7 @@ tripleBool RunGraph<G>::propagateVertex(VertexType v, DLogic driveSignal){
     bool bOutputFound=false,bInconsistentOutput=false,bNonDPassable=false;
     while(0!=cV.size()){
       ostringstream outputString;
-      for(deque<VertexType>::iterator it=cV.begin();it!=cV.end();++it){
+      for(typename deque<VertexType>::iterator it=cV.begin();it!=cV.end();++it){
         outputString << _v[*it]["label"]+",";
       }
       D.Dbg("1","cV==",outputString.str());
@@ -961,7 +890,7 @@ void RunGraph<G>::runATPG(){
     vObjective=*(_df.begin());
     backtraceVertex(vObjective);
     dumpSetVS(_setVS,_v);    
-    for(SetVertexSignalPairType::iterator it=_setVS.begin();it!=_setVS.end();++it){
+    for(typename SetVertexSignalPairType::iterator it=_setVS.begin();it!=_setVS.end();++it){
         tie(bFirstOutputFound,bFirstInconsistentOutput,bFirstNonDPassable)=propagateVertex(it->getVertex(),it->getSignal());
         if(bFirstOutputFound||bFirstNonDPassable||bFirstInconsistentOutput) break;
     }
