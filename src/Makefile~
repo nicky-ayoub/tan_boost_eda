@@ -1,0 +1,30 @@
+#
+#
+# http://www.drdobbs.com/exploring-eda-algorithms-with-the-boost/184401676
+#
+#
+#
+
+
+SOURCE=octhecdec.cpp octhecdec.h
+MYPROGRAM=atpg
+MYINCLUDES=.
+
+#MYLIBRARIES=fltk
+CC=g++
+
+#------------------------------------------------------------------------------
+
+
+
+all: $(MYPROGRAM)
+
+
+
+$(MYPROGRAM): $(SOURCE)
+
+	$(CC) -I$(MYINCLUDES) $(SOURCE) -o$(MYPROGRAM) # -l$(MYLIBRARIES)
+
+clean:
+
+	rm -f $(MYPROGRAM)
