@@ -14,7 +14,7 @@ class DFrontier{
 typedef typename boost::graph_traits<GraphType>::vertex_descriptor VertexType;
 public:
    DFrontier() : _reachedPO(false) {}
-   const char* getVersion(){ return _Version; };
+   const string getVersion(){ return _Version; };
    bool empty(){ return _stackVertex.empty(); }
    bool reachedPO() { return _reachedPO; }
    void setReachedPO() { _reachedPO=true;}
@@ -27,10 +27,10 @@ public:
       return v;
    };
 private:
-   static char* _Version;
+   static string _Version;
    vector<VertexType> _stackVertex;
    bool _reachedPO;
 };
 template<typename G>
-char* DFrontier<G>::_Version="$Id: DFrontier.hpp,v 1.2 2002/11/21 18:09:12 khtan Exp $";
+string DFrontier<G>::_Version="$Id: DFrontier.hpp,v 1.2 2002/11/21 18:09:12 khtan Exp $";
 #endif // __DFrontier__

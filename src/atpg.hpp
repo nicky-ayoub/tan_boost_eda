@@ -58,7 +58,35 @@ decision making ) introduces a retry step that addresses this.
 // ------------------------------------------------------------
 // Problem areas
 // ------------------------------------------------------------
+  // This interface has not worked for a long time
+  typedef std::map<std::string, std::string> GraphvizAttrList;
 
+  typedef property<vertex_attribute_t, GraphvizAttrList>
+          GraphvizVertexProperty;
+
+  typedef property<edge_attribute_t, GraphvizAttrList,
+                   property<edge_index_t, int> >
+          GraphvizEdgeProperty;
+
+  typedef property<graph_graph_attribute_t, GraphvizAttrList,
+                   property<graph_vertex_attribute_t, GraphvizAttrList,
+                   property<graph_edge_attribute_t, GraphvizAttrList,
+                   property<graph_name_t, std::string> > > >
+          GraphvizGraphProperty;
+
+  typedef subgraph<adjacency_list<vecS,
+                   vecS, directedS,
+                   GraphvizVertexProperty,
+                   GraphvizEdgeProperty,
+                   GraphvizGraphProperty> >
+          GraphvizDigraph;
+
+  typedef subgraph<adjacency_list<vecS,
+                   vecS, undirectedS,
+                   GraphvizVertexProperty,
+                   GraphvizEdgeProperty,
+                   GraphvizGraphProperty> >
+          GraphvizGraph;
 // ------------------------------------------------------------
 // Global Typedefs
 // ------------------------------------------------------------
@@ -371,7 +399,7 @@ public :
   typedef typename boost::property_map<GraphType,boost::vertex_attribute_t>::type VertexAttrMapType;
   typedef typename boost::property_map<GraphType,boost::edge_attribute_t>::type EdgeAttrMapType;
   XEdgeVisitor(GraphType& g){ _EdgeAttrMap=boost::get(edge_attribute,g); }
-  template <class Edge, GraphType> void examine_edge(Edge e, const GraphType &){
+  template <class Edge > void examine_edge(Edge e, const GraphType &){
     if(""==_EdgeAttrMap[e]["label"])
       _EdgeAttrMap[e]["label"]="X";
   }
@@ -402,6 +430,34 @@ private:
   EdgeAttrMapType _E;
 };
 // ------------------------------------------------------------
+// class NodeHelper
+// ------------------------------------------------------------
+class NodeHelper{
+  /* Class implements format policy of Vertex label
+     label == name:func, with default func==noop
+     using defaults for constructor and copy constructor
+     NB - compiler defaults of destructor, copy constructor, operator= sufficient
+   */
+public:
+  NodeHelper(const string& label){
+    string::size_type dotLocation=label.find_first_of(":");
+    if(string::npos!=dotLocation){
+      setName(label.substr(1,dotLocation));
+      setFunc(label.substr(dotLocation+1));
+    }else{
+      setName(label);
+      setFunc("noop");
+    }
+  }
+  void setName(const string& name){ _name=name; }
+  void setFunc(const string& func){ _func=func; }
+  const string& getName(){return _name;}
+  const string& getFunc(){return _func;}
+private:
+  string _name;
+  string _func;
+};
+// ------------------------------------------------------------
 // class BacktraceVisitor
 // ------------------------------------------------------------
 template<typename GraphType>
@@ -424,7 +480,7 @@ public:
   BacktraceVisitor(const GraphType& g,EdgeAttrMapType& eM,SetVertexSignalPairType& setVS) : _EdgeAttrMap(eM), _SetVS(setVS){
   /* BacktraceVisitor is used with GraphType==<reverse_graph<G>>, so the GraphType edge attr map has to be passed in */
   }
-  template<class Vertex, GraphType> bool HasXs(Vertex v,const GraphType& g){
+  template<class Vertex> bool HasXs(Vertex v,const GraphType& g){
     Debug D("HasXs");
     string VertexLabel=boost::get(boost::vertex_attribute,g,v)["label"];
     D.Dbg("1","vertex label==",VertexLabel);
@@ -441,7 +497,7 @@ public:
      }
     return bReturn;
   }
-  template <class Vertex,  GraphType> DLogic suggestEnablingSignal(Vertex v, const GraphType & g){
+  template <class Vertex> DLogic suggestEnablingSignal(Vertex v, const GraphType & g){
     /* Looks at source vertices of all incoming edges and collect
        their func values. Return enabling signal, based on func values if
        NAND,NOR,AND and OR found. Otherwise, no simple algorithm exists, so we
@@ -479,7 +535,7 @@ public:
     D.Dbg("1","dResult==",dResult.GetString());
     return dResult;
   }
-  template <class Vertex, GraphType> void discover_vertex(Vertex v, const GraphType & g){
+  template <class Vertex > void discover_vertex(Vertex v, const GraphType & g){
     Debug D("discover_vertex");
     string VertexLabel=boost::get(boost::vertex_attribute,g,v)["label"];
     D.Dbg("1","vertex label==",VertexLabel);
@@ -497,34 +553,6 @@ private:
   BacktraceVisitor& operator=(const BacktraceVisitor&);
   EdgeAttrMapType& _EdgeAttrMap;
   SetVertexSignalPairType& _SetVS; // set of vertex-signal
-};
-// ------------------------------------------------------------
-// class NodeHelper
-// ------------------------------------------------------------
-class NodeHelper{
-  /* Class implements format policy of Vertex label
-     label == name:func, with default func==noop
-     using defaults for constructor and copy constructor
-     NB - compiler defaults of destructor, copy constructor, operator= sufficient
-   */
-public:
-  NodeHelper(const string& label){
-    string::size_type dotLocation=label.find_first_of(":");
-    if(string::npos!=dotLocation){
-      setName(label.substr(1,dotLocation));
-      setFunc(label.substr(dotLocation+1));
-    }else{
-      setName(label);
-      setFunc("noop");
-    }
-  }
-  void setName(const string& name){ _name=name; }
-  void setFunc(const string& func){ _func=func; }
-  const string& getName(){return _name;}
-  const string& getFunc(){return _func;}
-private:
-  string _name;
-  string _func;
 };
 // ------------------------------------------------------------
 // class RunGraph
@@ -565,8 +593,8 @@ public:
       void seedDFrontier(DFrontierType& dF);
       void updateDFrontier(DFrontierType& dF);
       void printFinishStats(bool DFrontierEmpty,bool FirstOutputFound, bool FirstNonDPassable, bool FirstInconsistentOutput);
-      const char* getVersion(){ return _Version; };
-      static char* _Version;
+      const string getVersion(){ return _Version; };
+      static string _Version;
 private:
       RunGraph();
       RunGraph(const RunGraph&);
@@ -579,11 +607,12 @@ private:
       SetVertexSignalPairType _setVS;
 };
 template<typename G>
-char* RunGraph<G>::_Version="$Id$";
+string RunGraph<G>::_Version="$Id$";
 template<typename G>
-RunGraph<G>::RunGraph(const string& path){
+RunGraph<G>::RunGraph(const string& path){  
+  dynamic_properties dp;
   cout << "Reading " << path << "\n";
-  read_graphviz(path.c_str(),_g);
+  read_graphviz(path.c_str(),_g, dp);
   _v=boost::get(vertex_attribute,_g);
   _e=boost::get(edge_attribute,_g);
   _df.clear();
