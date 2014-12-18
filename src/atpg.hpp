@@ -75,7 +75,7 @@ decision making ) introduces a retry step that addresses this.
           GraphvizGraphProperty;
 
   typedef subgraph<adjacency_list<vecS,
-                   vecS, directedS,
+				  vecS, bidirectionalS,
                    GraphvizVertexProperty,
                    GraphvizEdgeProperty,
                    GraphvizGraphProperty> >
@@ -461,7 +461,7 @@ private:
 // class BacktraceVisitor
 // ------------------------------------------------------------
 template<typename GraphType>
-class BacktraceVisitor : public boost::default_dfs_visitor{
+class BacktraceVisitor : public boost::default_dfs_visitor {
 /* Given a vertex in the DFrontier, we traceback until we find 
    input nodes. These are kept in a container of unique vertices,
    actually SetVertexSignalPair.
@@ -480,7 +480,19 @@ public:
   BacktraceVisitor(const GraphType& g,EdgeAttrMapType& eM,SetVertexSignalPairType& setVS) : _EdgeAttrMap(eM), _SetVS(setVS){
   /* BacktraceVisitor is used with GraphType==<reverse_graph<G>>, so the GraphType edge attr map has to be passed in */
   }
-  template<class Vertex> bool HasXs(Vertex v,const GraphType& g){
+  template<class Vertex>bool HasXs(Vertex v,const GraphType& g);
+  template<class Vertex>DLogic suggestEnablingSignal(Vertex v, const GraphType & g);
+  template<class Vertex>void  discover_vertex(Vertex v, const GraphType & g);
+
+private:
+  BacktraceVisitor();
+  BacktraceVisitor& operator=(const BacktraceVisitor&);
+  EdgeAttrMapType& _EdgeAttrMap;
+  SetVertexSignalPairType& _SetVS; // set of vertex-signal
+};
+
+template <typename GraphType>
+template<class Vertex>bool BacktraceVisitor<GraphType>::HasXs(Vertex v,const GraphType& g){
     Debug D("HasXs");
     string VertexLabel=boost::get(boost::vertex_attribute,g,v)["label"];
     D.Dbg("1","vertex label==",VertexLabel);
@@ -497,7 +509,9 @@ public:
      }
     return bReturn;
   }
-  template <class Vertex> DLogic suggestEnablingSignal(Vertex v, const GraphType & g){
+
+template <typename GraphType>
+  template <class Vertex> DLogic BacktraceVisitor<GraphType>::suggestEnablingSignal(Vertex v, const GraphType & g){
     /* Looks at source vertices of all incoming edges and collect
        their func values. Return enabling signal, based on func values if
        NAND,NOR,AND and OR found. Otherwise, no simple algorithm exists, so we
@@ -535,7 +549,9 @@ public:
     D.Dbg("1","dResult==",dResult.GetString());
     return dResult;
   }
-  template <class Vertex > void discover_vertex(Vertex v, const GraphType & g){
+
+template <typename GraphType>
+  template <class Vertex > void  BacktraceVisitor<GraphType>::discover_vertex(Vertex v, const GraphType & g){
     Debug D("discover_vertex");
     string VertexLabel=boost::get(boost::vertex_attribute,g,v)["label"];
     D.Dbg("1","vertex label==",VertexLabel);
@@ -548,12 +564,6 @@ public:
       }
     }//if input vertices
   }
-private:
-  BacktraceVisitor();
-  BacktraceVisitor& operator=(const BacktraceVisitor&);
-  EdgeAttrMapType& _EdgeAttrMap;
-  SetVertexSignalPairType& _SetVS; // set of vertex-signal
-};
 // ------------------------------------------------------------
 // class RunGraph
 // ------------------------------------------------------------
@@ -608,6 +618,7 @@ private:
 };
 template<typename G>
 string RunGraph<G>::_Version="$Id$";
+
 template<typename G>
 RunGraph<G>::RunGraph(const string& path){  
   dynamic_properties dp;
@@ -619,6 +630,7 @@ RunGraph<G>::RunGraph(const string& path){
   _setVS.clear();
   _pRG=new reverse_graph<G>(_g);
 };
+
 template<typename G>
 RunGraph<G>::~RunGraph(){
   delete _pRG;
