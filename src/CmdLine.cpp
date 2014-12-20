@@ -3,10 +3,8 @@
    long as this copyright notice appears in all source files.
 */
 // $Id: CmdLine.cpp,v 1.16 2002/11/28 18:24:45 khtan Exp khtan $
-#include "CmdLine.h" // include this first so that pragma warning will take effect
-#ifndef STL96 // preprocessor token for very old STL, circa 1996 that does not have namespace functionality
-   using namespace std;
-#endif
+#include "CmdLine.hpp" // include this first so that pragma warning will take effect
+using namespace std;
 
 CmdLine::CmdLine(){
   debug=false;

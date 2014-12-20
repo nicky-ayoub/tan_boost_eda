@@ -9,6 +9,7 @@ OBJECTS=CmdLine.o  Debug.o  DLogic.o atpg.o
 SOURCE=CmdLine.cpp  Debug.cpp  DLogic.cpp atpg.cpp
 EXEC=atpg
 CXXFLAGS=-Wall -std=c++11
+CXXFLAGS=-Wall 
 
 #------------------------------------------------------------------------------
 

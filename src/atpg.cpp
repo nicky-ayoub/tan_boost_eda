@@ -10,7 +10,7 @@
 using std::cout;
 
 #include "atpg.hpp"
-#include "CmdLine.h"
+#include "CmdLine.hpp"
 void processCmdLine(CmdLine& cL,int argc,char** argv){
   cL.addStandaloneSwitch("-i","initialize graph");
   cL.addStandaloneSwitch("-atpg","run atpg algorithm");

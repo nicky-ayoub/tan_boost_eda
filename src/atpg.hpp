@@ -38,8 +38,8 @@ using namespace std;
 using namespace boost;
 
 // extended BGL functionality
-//using boost::dfv;
-//using boost::dfs;
+//using boost::dfv;  // Not Available
+//using boost::dfs;  // Not Available
 
 /** Further areas of investigation
 1) Multiple faults
@@ -59,6 +59,8 @@ decision making ) introduces a retry step that addresses this.
 // Problem areas
 // ------------------------------------------------------------
   // This interface has not worked for a long time
+  // Stolen from the ifdef'ed out code in boost/graph/graphviz.hpp
+
   typedef std::map<std::string, std::string> GraphvizAttrList;
 
   typedef property<vertex_attribute_t, GraphvizAttrList>
@@ -87,6 +89,7 @@ decision making ) introduces a retry step that addresses this.
                    GraphvizEdgeProperty,
                    GraphvizGraphProperty> >
           GraphvizGraph;
+
 // ------------------------------------------------------------
 // Global Typedefs
 // ------------------------------------------------------------
@@ -477,9 +480,9 @@ public:
   typedef typename boost::graph_traits<GraphType>::vertex_descriptor VertexType;
   typedef set<VertexSignalPair<VertexType> > SetVertexSignalPairType;
 
-  BacktraceVisitor(const GraphType& g,EdgeAttrMapType& eM,SetVertexSignalPairType& setVS) : _EdgeAttrMap(eM), _SetVS(setVS){
+  BacktraceVisitor(const GraphType& g,EdgeAttrMapType& eM,SetVertexSignalPairType& setVS) : _EdgeAttrMap(eM), _SetVS(setVS){}
   /* BacktraceVisitor is used with GraphType==<reverse_graph<G>>, so the GraphType edge attr map has to be passed in */
-  }
+  
   template<class Vertex>bool HasXs(Vertex v,const GraphType& g);
   template<class Vertex>DLogic suggestEnablingSignal(Vertex v, const GraphType & g);
   template<class Vertex>void  discover_vertex(Vertex v, const GraphType & g);
