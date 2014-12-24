@@ -10,7 +10,7 @@ OBJECTS=$(SOURCES:.cpp=.o)
 EXEC=atpg
 CXXFLAGS=-Wall -std=c++11
 CXXFLAGS=-Wall
-LIBS= -lboost_graph -lboost_program_options
+LIBS= -lboost_graph -lboost_program_options -lboost_regex
 
 #------------------------------------------------------------------------------
 %.o : %.cpp %.hpp
