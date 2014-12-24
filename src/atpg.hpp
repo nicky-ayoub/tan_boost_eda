@@ -61,78 +61,38 @@ decision making ) introduces a retry step that addresses this.
   // This interface has not worked for a long time
   // Stolen from the ifdef'ed out code in boost/graph/graphviz.hpp
 
-  typedef std::map<std::string, std::string> GraphvizAttrList;
+typedef std::map<std::string, std::string> GraphvizAttrList;
 
-  typedef property<vertex_attribute_t, GraphvizAttrList>
+typedef property<vertex_attribute_t, GraphvizAttrList>
           GraphvizVertexProperty;
 
-  typedef property<edge_attribute_t, GraphvizAttrList,
+typedef property<edge_attribute_t, GraphvizAttrList,
                    property<edge_index_t, int> >
           GraphvizEdgeProperty;
 
-  typedef property<graph_graph_attribute_t, GraphvizAttrList,
+typedef property<graph_graph_attribute_t, GraphvizAttrList,
                    property<graph_vertex_attribute_t, GraphvizAttrList,
                    property<graph_edge_attribute_t, GraphvizAttrList,
                    property<graph_name_t, std::string> > > >
           GraphvizGraphProperty;
 
-  typedef subgraph<adjacency_list<vecS,
-				  vecS, bidirectionalS,
-                   GraphvizVertexProperty,
-                   GraphvizEdgeProperty,
-                   GraphvizGraphProperty> >
-          GraphvizDigraph;
+// Vertex properties
+typedef property < vertex_name_t, std::string,
+          property < vertex_color_t, std::string  > > vertex_p;
+// Edge properties
+typedef property < edge_weight_t, std::string  > edge_p;
+// Graph properties
+typedef property < graph_name_t, std::string > graph_p;
+// adjacency_list-based type
+typedef adjacency_list<vecS, vecS, bidirectionalS, 
+		       vertex_p, edge_p, graph_p > GraphvizDigraph;
 
-  typedef subgraph<adjacency_list<vecS,
-                   vecS, undirectedS,
-                   GraphvizVertexProperty,
-                   GraphvizEdgeProperty,
-                   GraphvizGraphProperty> >
-          GraphvizGraph;
 
 // ------------------------------------------------------------
 // Global Typedefs
 // ------------------------------------------------------------
 typedef boost::tuple<bool,bool,bool> tripleBool;
 
-// ------------------------------------------------------------
-// class SupportGraph
-// ------------------------------------------------------------
-class SupportGraph{
-/* Utility class to hold special functions.
-   - check whether a .dot file is a graph or digraph.
- */
-public:
-      enum DotFileType{Unknown,Digraph,Graph,N};
-      static DotFileType getDotFileType(const string& path);
-      static string _DotFileStringType[N];
-      SupportGraph(){};
-private:
-      SupportGraph(const SupportGraph&);
-      SupportGraph& operator=(const SupportGraph&);
-};
-string SupportGraph::_DotFileStringType[N]={"Unknown","Digraph","Graph"};
-
-SupportGraph::DotFileType SupportGraph::getDotFileType(const string& path){
-  /* Can't inquire about a Graphviz's type until we read it in, and
-     can read the graph in until we declare its type.
-     So read the .dot file and see what's in the first line
-   */
-  ifstream inDotFile(path.c_str(),ios::in);
-  string tokenRead;
-  while(inDotFile>>tokenRead){ // read first line only
-    // cout << "tokenRead==" << tokenRead << "\n";
-    inDotFile.close();
-    if(string::npos!=tokenRead.find("digraph")){
-      return Digraph;
-    }else if(string::npos!=tokenRead.find("graph")){
-      return Graph;
-    }else{
-      return Unknown;
-    }
-  }
-  return Unknown;
-};
 // ------------------------------------------------------------
 // class VertexSignalPair
 // ------------------------------------------------------------
@@ -575,9 +535,11 @@ class RunGraph{
 /* class to implement Podem algorithm
 */
 public:
-      typedef typename boost::property_map<GraphType,boost::vertex_attribute_t>::type VertexAttrMapType;
-	  typedef typename boost::property_map<GraphType,boost::edge_attribute_t>::type EdgeAttrMapType;
-      typedef typename boost::graph_traits<GraphType>::vertex_descriptor VertexType;
+   typedef typename boost::property_map<GraphType,boost::vertex_attribute_t>::type VertexAttrMapType; 
+   typedef typename boost::property_map<GraphType,boost::edge_attribute_t>::type EdgeAttrMapType;
+   typedef typename boost::ref_property_map<GraphType*,string> GraphAttrMapType;
+
+     typedef typename boost::graph_traits<GraphType>::vertex_descriptor VertexType;
       typedef typename boost::graph_traits<GraphType>::vertex_iterator VertexIteratorType;
       typedef typename boost::graph_traits<GraphType>::edge_iterator EdgeIteratorType;
       typedef typename boost::graph_traits<GraphType>::in_edge_iterator InEdgeIteratorType;
@@ -586,7 +548,8 @@ public:
       typedef std::deque<VertexType> PropagateContainerType;
       typedef set<VertexSignalPair<VertexType> > SetVertexSignalPairType;
       // Needs boost::               Y                    N                            Y                    N
-  BOOST_STATIC_ASSERT((boost::is_same<GraphType,GraphvizGraph>::value || boost::is_same<GraphType,GraphvizDigraph>::value));
+  // BOOST_STATIC_ASSERT((boost::is_same<GraphType,GraphvizGraph>::value || boost::is_same<GraphType,GraphvizDigraph>::value));
+
       RunGraph(const string& path);
       ~RunGraph();
       void setDebug(const string& dString);
@@ -623,12 +586,26 @@ template<typename G>
 string RunGraph<G>::_Version="$Id$";
 
 template<typename G>
-RunGraph<G>::RunGraph(const string& path){  
+RunGraph<G>::RunGraph(const string& path) {   
   dynamic_properties dp;
+
+  VertexAttrMapType name = get(vertex_name, _g);
+  dp.property("node_id",name);
+
+   VertexAttrMapType color = get(vertex_color, _g);
+  dp.property("color",color);
+
+  EdgeAttrMapType weight = get(edge_weight, _g);
+  dp.property("weight",weight);
+
+// Use ref_property_map to turn a graph property into a property map
+  GraphAttrMapType gname(get_property(_g,graph_name));
+  dp.property("name",gname);
+
   cout << "Reading " << path << "\n";
-  read_graphviz(path.c_str(),_g, dp);
-  _v=boost::get(vertex_attribute,_g);
-  _e=boost::get(edge_attribute,_g);
+  read_graphviz(path.c_str(),_g, dp, "node_id");
+  //_v=boost::get(vertex_attribute,_g);
+  //_e=boost::get(edge_attribute,_g);
   _df.clear();
   _setVS.clear();
   _pRG=new reverse_graph<G>(_g);
@@ -640,8 +617,24 @@ RunGraph<G>::~RunGraph(){
 };
 template<typename G>
 void RunGraph<G>::writeGraph(const string& path){
-  cout << "Writing " << path << "\n";
-  write_graphviz(path.c_str(),_g);
+ dynamic_properties dp;
+
+  VertexAttrMapType name = get(vertex_name, _g);
+  dp.property("node_id",name);
+
+   VertexAttrMapType color = get(vertex_color, _g);
+  dp.property("color",color);
+
+  EdgeAttrMapType weight = get(edge_weight, _g);
+  dp.property("weight",weight);
+
+// Use ref_property_map to turn a graph property into a property map
+  GraphAttrMapType gname(get_property(_g,graph_name));
+  dp.property("name",gname);
+
+  cout << "Writing " << path << "\n"; 
+  std::ofstream ofs( path.c_str() );
+  write_graphviz_dp(ofs,_g, dp);
 };
 template<typename G>
 typename RunGraph<G>::VertexType RunGraph<G>::findVertexWithLabel(const string& label){

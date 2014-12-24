@@ -9,6 +9,7 @@
 #include <iostream>
 using std::cout;
 
+#include "SupportGraph.hpp"
 #include "atpg.hpp"
 #include "CmdLine.hpp"
 void processCmdLine(CmdLine& cL,int argc,char** argv){
@@ -49,7 +50,6 @@ int main(int argc,char** argv){
 
    */
   cout << "$Id$\n";
-  SupportGraph sG;
   CmdLine cLine;
   processCmdLine(cLine,argc,argv);
   if("set"==cLine.switchValue("-h")){
@@ -57,6 +57,7 @@ int main(int argc,char** argv){
   }else{
     const string& inputFile=cLine.switchValue("-r");
     if("undefined"!=inputFile){
+      SupportGraph sG;
       SupportGraph::DotFileType dotFileType=sG.getDotFileType(inputFile);
       if (SupportGraph::Digraph==dotFileType){
         cout << "Digraph file type\n";
@@ -65,7 +66,9 @@ int main(int argc,char** argv){
         tGraph.setDebug(cLine.switchValue("-x"));
         if("set"==cLine.switchValue("-i")) tGraph.initializeGraph();
         if("undefined"!=cLine.switchValue("-t")) tGraph.test(cLine.switchValue("-t"));
-        if("set"==cLine.switchValue("-atpg")) tGraph.runATPG();
+
+//        if("set"==cLine.switchValue("-atpg")) tGraph.runATPG();
+
         if("undefined"!=cLine.switchValue("-w")) tGraph.writeGraph(cLine.switchValue("-w"));
       }else if(SupportGraph::Graph==dotFileType){
         cout << "Graph file type not supported. Skipping\n";
