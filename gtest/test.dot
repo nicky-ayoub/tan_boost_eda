@@ -1,0 +1,5 @@
+digraph G {
+a [mass=0];
+c [mass=0];
+e [mass=6.66];
+}
